@@ -12,8 +12,8 @@ public class EmailValidator {
 
     public boolean isValidEmail(String email) {
         if (email == null) {
-            return false;
+            return true;
         }
-        return EMAIL_PATTERN.matcher(email).matches();
+        return !EMAIL_PATTERN.matcher(email).matches();
     }
 }

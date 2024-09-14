@@ -98,7 +98,7 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 userCarriveResponse.setData(null);
                 return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
             }
-            if (!emailValidator.isValidEmail(userRegister.getEmail())){
+            if (emailValidator.isValidEmail(userRegister.getEmail())){
                 userCarriveResponse.setMessage("email is not valid");
                 userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
                 userCarriveResponse.setData(null);
@@ -391,7 +391,7 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 userCarriveResponse.setData(null);
                 return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
             }
-            if (!emailValidator.isValidEmail(userLogin.getEmail())){
+            if (emailValidator.isValidEmail(userLogin.getEmail())){
                 userCarriveResponse.setMessage("email invalid");
                 userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
                 userCarriveResponse.setData(null);
