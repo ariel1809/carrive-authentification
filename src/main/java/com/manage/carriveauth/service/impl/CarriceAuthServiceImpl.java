@@ -338,6 +338,7 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                         return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
                     }
                     driver.setIsActive(true);
+                    driver.setIsRegister(true);
                     driver = driverRepository.save(driver);
                     registerCode.setUser(driver);
                     registerCode = registerCodeRepository.save(registerCode);
@@ -350,6 +351,7 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                         return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
                     }
                     passenger.setIsActive(true);
+                    passenger.setIsRegister(true);
                     passenger = passengerRepository.save(passenger);
                     registerCode.setUser(passenger);
                     registerCode = registerCodeRepository.save(registerCode);
