@@ -1,5 +1,6 @@
 package com.manage.carriveauth.controller;
 
+import com.manage.carrive.dto.UserLogin;
 import com.manage.carrive.dto.UserRegister;
 import com.manage.carrive.response.UserCarriveResponse;
 import com.manage.carriveauth.service.impl.CarriceAuthServiceImpl;
@@ -23,5 +24,10 @@ public class CarriveAuthController {
     @PostMapping("valid-register")
     public ResponseEntity<UserCarriveResponse> validRegister(@RequestParam("code") Integer code) {
         return service.validateRegistration(code);
+    }
+
+    @PostMapping("login")
+    public ResponseEntity<UserCarriveResponse> login(@RequestBody UserLogin userLogin) {
+        return service.login(userLogin);
     }
 }
