@@ -706,6 +706,83 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
         }
     }
 
+    @Override
+    public ResponseEntity<UserCarriveResponse> changePassword(String id, String password, String confirmPassword) {
+        UserCarriveResponse userCarriveResponse = new UserCarriveResponse();
+        try {
+
+            if (id == null){
+                userCarriveResponse.setMessage("email is null");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            if (password == null){
+                userCarriveResponse.setMessage("password is null");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            if (confirmPassword == null){
+                userCarriveResponse.setMessage("confirmPassword is null");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            if (!password.equals(confirmPassword)){
+                userCarriveResponse.setMessage("passwords do not match");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            ResetPassword resetPassword = resetPasswordRepository.findById(id).orElse(null);
+            if (resetPassword == null){
+                userCarriveResponse.setMessage("reset password not found");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            if (!resetPassword.getCheckCode()){
+                userCarriveResponse.setMessage("check code invalid");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            resetPassword.setIsReset(true);
+            resetPassword.setNewPassword(passwordEncoder.encode(password));
+            UserCarrive userCarrive = resetPassword.getUser();
+            if (driverRepository.existsByEmail(userCarrive.getEmail())){
+                Driver driver = driverRepository.findByEmail(userCarrive.getEmail()).orElse(null);
+                if (driver != null){
+                    driver.setPassword(passwordEncoder.encode(password));
+                    driver = driverRepository.save(driver);
+                    resetPassword.setUser(driver);
+                }
+            }else {
+                Passenger passenger = passengerRepository.findByEmail(userCarrive.getEmail()).orElse(null);
+                if (passenger != null){
+                    passenger.setPassword(passwordEncoder.encode(password));
+                    passenger = passengerRepository.save(passenger);
+                    resetPassword.setUser(passenger);
+                }
+            }
+
+            resetPassword.setResetDate(LocalDateTime.now(zoneId));
+            resetPassword = resetPasswordRepository.save(resetPassword);
+            userCarriveResponse.setMessage("reset password success");
+            userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+            userCarriveResponse.setData(resetPassword);
+            return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+            
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+            userCarriveResponse.setMessage(e.getMessage());
+            userCarriveResponse.setData(null);
+            return new ResponseEntity<>(userCarriveResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private Boolean isValidCode(Integer code) {
         return registerCodeRepository.findByCode(code)
                 .map(registerCode -> registerCode.getExpirationDate().isAfter(LocalDateTime.now(zoneId)))

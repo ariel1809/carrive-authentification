@@ -40,4 +40,9 @@ public class CarriveAuthController {
     public ResponseEntity<UserCarriveResponse> validateReset(@RequestParam("code") Integer code) {
         return service.validateEmail(code);
     }
+
+    @PostMapping("reset-password")
+    public ResponseEntity<UserCarriveResponse> resetPassword(@RequestParam("id") String id, @RequestParam("password") String password, @RequestParam("confirm_password") String confirmPassword) {
+        return service.changePassword(id, password, confirmPassword);
+    }
 }
