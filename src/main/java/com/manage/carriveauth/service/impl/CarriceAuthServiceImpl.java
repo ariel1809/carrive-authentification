@@ -507,6 +507,28 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
         }
     }
 
+    @Override
+    public ResponseEntity<UserCarriveResponse> forgetPassword(String email) {
+        UserCarriveResponse userCarriveResponse = new UserCarriveResponse();
+        try {
+
+            if (email == null || email.isEmpty()){
+                userCarriveResponse.setMessage("email is null");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            
+
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+            userCarriveResponse.setMessage(e.getMessage());
+            userCarriveResponse.setData(null);
+            return new ResponseEntity<>(userCarriveResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private Boolean isValidCode(Integer code) {
         return registerCodeRepository.findByCode(code)
                 .map(registerCode -> registerCode.getExpirationDate().isAfter(LocalDateTime.now(zoneId)))
