@@ -50,4 +50,9 @@ public class CarriveAuthController {
     public ResponseEntity<UserCarriveResponse> resendRegisterCode(@RequestParam("email") String email) {
         return service.resendCodeRegister(email);
     }
+
+    @PostMapping("resend-reset-code")
+    public ResponseEntity<UserCarriveResponse> resendResetCode(@RequestParam("email") String email) {
+        return service.resendCodeReset(email);
+    }
 }
