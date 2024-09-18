@@ -12,4 +12,5 @@ public interface CarriceAuthServiceApi {
     ResponseEntity<UserCarriveResponse> validateRegistration(Integer code);
     ResponseEntity<UserCarriveResponse> login(UserLogin userLogin);
     ResponseEntity<UserCarriveResponse> forgetPassword(String email);
+    ResponseEntity<UserCarriveResponse> validateEmail(Integer code);
 }

@@ -30,4 +30,14 @@ public class CarriveAuthController {
     public ResponseEntity<UserCarriveResponse> login(@RequestBody UserLogin userLogin) {
         return service.login(userLogin);
     }
+
+    @PostMapping("forgot-password")
+    public ResponseEntity<UserCarriveResponse> forgotPassword(@RequestParam("email") String email) {
+        return service.forgetPassword(email);
+    }
+
+    @PostMapping("validate-reset")
+    public ResponseEntity<UserCarriveResponse> validateReset(@RequestParam("code") Integer code) {
+        return service.validateEmail(code);
+    }
 }
