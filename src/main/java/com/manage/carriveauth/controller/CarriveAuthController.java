@@ -45,4 +45,9 @@ public class CarriveAuthController {
     public ResponseEntity<UserCarriveResponse> resetPassword(@RequestParam("id") String id, @RequestParam("password") String password, @RequestParam("confirm_password") String confirmPassword) {
         return service.changePassword(id, password, confirmPassword);
     }
+
+    @PostMapping("resend-register-code")
+    public ResponseEntity<UserCarriveResponse> resendRegisterCode(@RequestParam("email") String email) {
+        return service.resendCodeRegister(email);
+    }
 }

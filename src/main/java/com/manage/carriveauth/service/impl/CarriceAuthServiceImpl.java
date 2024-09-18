@@ -132,10 +132,17 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
             }
             RegisterCode registerCode = new RegisterCode();
+            registerCode.setExpirationDate(LocalDateTime.now(zoneId).plusMinutes(10));
+            int code = generateRegisterCode();
+            String emailContent = mailRegister(code);
+            registerCode.setCode(code);
+            registerCode.setIsOk(false);
+
             Mailer mailer = new Mailer();
             mailer.setReceiver(userRegister.getEmail());
             mailer.setSubject("VALIDEZ VOTRE INSCRIPTION : CARRIVE");
             mailer.setSender("stevekamga18@gmail.com");
+            mailer.setContent(emailContent);
             if (userRegister.getUserType().equals(UserTypeEnum.DRIVER)){
                 if (userRegister.getIdCar() == null){
                     userCarriveResponse.setMessage("idCar is null");
@@ -171,48 +178,13 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 car.setDriver(driver);
                 carRepository.save(car);
 
-                registerCode.setExpirationDate(LocalDateTime.now(zoneId).plusMinutes(10));
-                int code;
-                do {
-                    code = Integer.parseInt(RandomStringUtils.random(5, false, true));
-                } while (registerCodeRepository.existsByCode(code));
-                registerCode.setCode(code);
-                registerCode.setIsOk(false);
                 registerCode.setUser(driver);
-
-                String emailContent = "<!DOCTYPE html>" +
-                        "<html lang=\"fr\">" +
-                        "<head>" +
-                        "    <meta charset=\"UTF-8\">" +
-                        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-                        "    <title>Validation de l'inscription</title>" +
-                        "    <style>" +
-                        "        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }" +
-                        "        .container { background-color: white; border-radius: 5px; padding: 20px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }" +
-                        "        h1 { color: #333; }" +
-                        "        p { font-size: 16px; line-height: 1.5; color: #555; }" +
-                        "        .code { font-size: 24px; font-weight: bold; color: #007bff; background-color: #e9ecef; padding: 10px; border-radius: 5px; display: inline-block; margin-top: 10px; }" +
-                        "        .footer { margin-top: 20px; font-size: 12px; color: #777; }" +
-                        "    </style>" +
-                        "</head>" +
-                        "<body>" +
-                        "    <div class=\"container\">" +
-                        "        <h1>Validation de votre inscription</h1>" +
-                        "        <p>Veuillez entrer ce code pour valider votre inscription :</p>" +
-                        "        <div class=\"code\">" + code + "</div>" +
-                        "        <p class=\"footer\">Ce code est valable pour 10 minutes.</p>" +
-                        "    </div>" +
-                        "</body>" +
-                        "</html>";
-
-                mailer.setContent(emailContent);
                 try {
                     mailService.sendMail(mailer);
                     mailer.setIsGo(true);
                     mailerRepository.save(mailer);
                     registerCode = registerCodeRepository.save(registerCode);
                 } catch (Exception ex) {
-                    logger.error(ex.getMessage());
                     mailer.setIsGo(false);
                     mailerRepository.save(mailer);
                     logger.error(ex.getMessage());
@@ -234,50 +206,15 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 passenger.setIsConnected(false);
                 passenger = passengerRepository.save(passenger);
 
-
-                registerCode.setExpirationDate(LocalDateTime.now(zoneId).plusMinutes(10));
-                int code;
-                do {
-                    code = Integer.parseInt(RandomStringUtils.random(5, false, true));
-                } while (registerCodeRepository.existsByCode(code));
-                registerCode.setCode(code);
                 registerCode.setUser(passenger);
                 registerCode.setIsOk(false);
                 registerCodeRepository.save(registerCode);
-
-                String emailContent = "<!DOCTYPE html>" +
-                        "<html lang=\"fr\">" +
-                        "<head>" +
-                        "    <meta charset=\"UTF-8\">" +
-                        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-                        "    <title>Validation de l'inscription</title>" +
-                        "    <style>" +
-                        "        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }" +
-                        "        .container { background-color: white; border-radius: 5px; padding: 20px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }" +
-                        "        h1 { color: #333; }" +
-                        "        p { font-size: 16px; line-height: 1.5; color: #555; }" +
-                        "        .code { font-size: 24px; font-weight: bold; color: #007bff; background-color: #e9ecef; padding: 10px; border-radius: 5px; display: inline-block; margin-top: 10px; }" +
-                        "        .footer { margin-top: 20px; font-size: 12px; color: #777; }" +
-                        "    </style>" +
-                        "</head>" +
-                        "<body>" +
-                        "    <div class=\"container\">" +
-                        "        <h1>Validation de votre inscription</h1>" +
-                        "        <p>Veuillez entrer ce code pour valider votre inscription :</p>" +
-                        "        <div class=\"code\">" + code + "</div>" +
-                        "        <p class=\"footer\">Ce code est valable pour 10 minutes.</p>" +
-                        "    </div>" +
-                        "</body>" +
-                        "</html>";
-
-                mailer.setContent(emailContent);
                 try {
                     mailService.sendMail(mailer);
                     mailer.setIsGo(true);
                     mailerRepository.save(mailer);
                     registerCode = registerCodeRepository.save(registerCode);
                 } catch (Exception ex) {
-                    logger.error(ex.getMessage());
                     mailer.setIsGo(false);
                     mailerRepository.save(mailer);
                     logger.error(ex.getMessage());
@@ -297,6 +234,129 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
             }
 
         } catch (Exception e) {
+            logger.error(e.getMessage());
+            userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+            userCarriveResponse.setMessage(e.getMessage());
+            userCarriveResponse.setData(null);
+            return new ResponseEntity<>(userCarriveResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<UserCarriveResponse> resendCodeRegister(String email) {
+        UserCarriveResponse userCarriveResponse = new UserCarriveResponse();
+        try {
+
+            if (email == null || email.isEmpty()) {
+                userCarriveResponse.setMessage("email is null or empty");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            Mailer mailer = new Mailer();
+            mailer.setReceiver(email);
+            mailer.setSubject("VALIDEZ VOTRE INSCRIPTION : CARRIVE");
+            mailer.setSender("stevekamga18@gmail.com");
+            if (driverRepository.existsByEmail(email)) {
+                Driver driver = driverRepository.findByEmail(email).orElse(null);
+                if (driver == null) {
+                    userCarriveResponse.setMessage("driver not found");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
+                RegisterCode registerCode = registerCodeRepository.findByUser(driver).orElse(null);
+                if (registerCode == null) {
+                    userCarriveResponse.setMessage("registerCode not found");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
+                int code = generateRegisterCode();
+                registerCode.setCode(code);
+                registerCode.setUser(driver);
+                registerCode.setExpirationDate(LocalDateTime.now(zoneId).plusMinutes(10));
+                if (!registerCode.getIsOk()){
+                    registerCode.setIsOk(false);
+                    String emailContent = mailRegister(code);
+                    mailer.setContent(emailContent);
+                    try {
+                        mailService.sendMail(mailer);
+                        mailer.setIsGo(true);
+                        mailerRepository.save(mailer);
+                        registerCode = registerCodeRepository.save(registerCode);
+                    } catch (Exception ex) {
+                        mailer.setIsGo(false);
+                        mailerRepository.save(mailer);
+                        logger.error(ex.getMessage());
+                        userCarriveResponse.setMessage("mail does not send");
+                        userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+                        userCarriveResponse.setData(null);
+                    }
+                }else {
+                    userCarriveResponse.setMessage("registerCode already registered");
+                    userCarriveResponse.setData(null);
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+                }
+                userCarriveResponse.setMessage("success");
+                userCarriveResponse.setData(registerCode);
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+            }else if (passengerRepository.existsByEmail(email)) {
+                Passenger passenger = passengerRepository.findByEmail(email).orElse(null);
+                if (passenger == null) {
+                    userCarriveResponse.setMessage("driver not found");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
+                RegisterCode registerCode = registerCodeRepository.findByUser(passenger).orElse(null);
+                if (registerCode == null) {
+                    userCarriveResponse.setMessage("registerCode not found");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
+                int code = generateRegisterCode();
+                registerCode.setCode(code);
+                registerCode.setUser(passenger);
+                registerCode.setExpirationDate(LocalDateTime.now(zoneId).plusMinutes(10));
+                if (!registerCode.getIsOk()){
+                    registerCode.setIsOk(false);
+                    String emailContent = mailRegister(code);
+                    mailer.setContent(emailContent);
+                    try {
+                        mailService.sendMail(mailer);
+                        mailer.setIsGo(true);
+                        mailerRepository.save(mailer);
+                        registerCode = registerCodeRepository.save(registerCode);
+                    } catch (Exception ex) {
+                        mailer.setIsGo(false);
+                        mailerRepository.save(mailer);
+                        logger.error(ex.getMessage());
+                        userCarriveResponse.setMessage("mail does not send");
+                        userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+                        userCarriveResponse.setData(null);
+                    }
+                }else {
+                    userCarriveResponse.setMessage("registration already exist");
+                    userCarriveResponse.setData(null);
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+                }
+                userCarriveResponse.setMessage("success");
+                userCarriveResponse.setData(registerCode);
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+            }else {
+                userCarriveResponse.setMessage("user type invalide");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+
+        }catch (Exception e) {
             logger.error(e.getMessage());
             userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
             userCarriveResponse.setMessage(e.getMessage());
@@ -522,10 +582,9 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
             }
 
-            Integer code;
-            do {
-                code = Integer.valueOf(RandomStringUtils.random(5,false,true));
-            }while (resetPasswordRepository.existsByCode(code));
+            Integer code = generateResetCode();
+
+            String emailContent = mailResetPassword(code);
 
             ResetPassword resetPassword = new ResetPassword();
             resetPassword.setCode(code);
@@ -548,31 +607,6 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                     return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
                 }
                 resetPassword.setUser(passenger);
-
-                String emailContent = "<!DOCTYPE html>" +
-                        "<html lang=\"fr\">" +
-                        "<head>" +
-                        "    <meta charset=\"UTF-8\">" +
-                        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-                        "    <title>REINITIALISATION DU MOT DE PASSE</title>" +
-                        "    <style>" +
-                        "        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }" +
-                        "        .container { background-color: white; border-radius: 5px; padding: 20px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }" +
-                        "        h1 { color: #333; }" +
-                        "        p { font-size: 16px; line-height: 1.5; color: #555; }" +
-                        "        .code { font-size: 24px; font-weight: bold; color: #007bff; background-color: #e9ecef; padding: 10px; border-radius: 5px; display: inline-block; margin-top: 10px; }" +
-                        "        .footer { margin-top: 20px; font-size: 12px; color: #777; }" +
-                        "    </style>" +
-                        "</head>" +
-                        "<body>" +
-                        "    <div class=\"container\">" +
-                        "        <h1>REINITIALISATION DU MOT DE PASSE</h1>" +
-                        "        <p>Veuillez entrer ce code pour changer votre mot de passe :</p>" +
-                        "        <div class=\"code\">" + code + "</div>" +
-                        "        <p class=\"footer\">Ce code est valable pour 60 minutes.</p>" +
-                        "    </div>" +
-                        "</body>" +
-                        "</html>";
 
                 mailer.setContent(emailContent);
                 resetPassword = resetPasswordRepository.save(resetPassword);
@@ -604,31 +638,6 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
 
                 resetPassword.setUser(driver);
 
-                String emailContent = "<!DOCTYPE html>" +
-                        "<html lang=\"fr\">" +
-                        "<head>" +
-                        "    <meta charset=\"UTF-8\">" +
-                        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-                        "    <title>REINITIALISATION DU MOT DE PASSE</title>" +
-                        "    <style>" +
-                        "        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }" +
-                        "        .container { background-color: white; border-radius: 5px; padding: 20px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }" +
-                        "        h1 { color: #333; }" +
-                        "        p { font-size: 16px; line-height: 1.5; color: #555; }" +
-                        "        .code { font-size: 24px; font-weight: bold; color: #007bff; background-color: #e9ecef; padding: 10px; border-radius: 5px; display: inline-block; margin-top: 10px; }" +
-                        "        .footer { margin-top: 20px; font-size: 12px; color: #777; }" +
-                        "    </style>" +
-                        "</head>" +
-                        "<body>" +
-                        "    <div class=\"container\">" +
-                        "        <h1>REINITIALISATION DU MOT DE PASSE</h1>" +
-                        "        <p>Veuillez entrer ce code pour changer votre mot de passe :</p>" +
-                        "        <div class=\"code\">" + code + "</div>" +
-                        "        <p class=\"footer\">Ce code est valable pour 60 minutes.</p>" +
-                        "    </div>" +
-                        "</body>" +
-                        "</html>";
-
                 mailer.setContent(emailContent);
                 resetPasswordRepository.save(resetPassword);
                 try {
@@ -647,6 +656,129 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 userCarriveResponse.setMessage("send mail forgot password");
                 userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
                 return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+            }
+
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+            userCarriveResponse.setMessage(e.getMessage());
+            userCarriveResponse.setData(null);
+            return new ResponseEntity<>(userCarriveResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<UserCarriveResponse> resendCodeReset(String email) {
+        UserCarriveResponse userCarriveResponse = new UserCarriveResponse();
+        try {
+
+            if (email == null || email.isEmpty()) {
+                userCarriveResponse.setMessage("email is null or empty");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+            }
+            Mailer mailer = new Mailer();
+            mailer.setReceiver(email);
+            mailer.setSubject("MOT DE PASSE OUBLIE?");
+            mailer.setSender("stevekamga18@gmail.com");
+            if (driverRepository.existsByEmail(email)) {
+                Driver driver = driverRepository.findByEmail(email).orElse(null);
+                if (driver == null) {
+                    userCarriveResponse.setMessage("driver not found");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
+                ResetPassword resetPassword = resetPasswordRepository.findByUser(driver).orElse(null);
+                if (resetPassword == null) {
+                    userCarriveResponse.setMessage("registerCode not found");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
+                int code = generateResetCode();
+                resetPassword.setCode(code);
+                resetPassword.setUser(driver);
+                resetPassword.setResetDate(LocalDateTime.now(zoneId).plusMinutes(10));
+                if (!resetPassword.getIsReset()){
+                    resetPassword.setIsReset(false);
+                    String emailContent = mailRegister(code);
+                    mailer.setContent(emailContent);
+                    try {
+                        mailService.sendMail(mailer);
+                        mailer.setIsGo(true);
+                        mailerRepository.save(mailer);
+                        resetPassword = resetPasswordRepository.save(resetPassword);
+                    } catch (Exception ex) {
+                        mailer.setIsGo(false);
+                        mailerRepository.save(mailer);
+                        logger.error(ex.getMessage());
+                        userCarriveResponse.setMessage("mail does not send");
+                        userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+                        userCarriveResponse.setData(null);
+                    }
+                }else {
+                    userCarriveResponse.setMessage("registerCode already registered");
+                    userCarriveResponse.setData(null);
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+                }
+                userCarriveResponse.setMessage("success");
+                userCarriveResponse.setData(resetPassword);
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+            }else if (passengerRepository.existsByEmail(email)) {
+                Passenger passenger = passengerRepository.findByEmail(email).orElse(null);
+                if (passenger == null) {
+                    userCarriveResponse.setMessage("driver not found");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
+                ResetPassword resetPassword = resetPasswordRepository.findByUser(passenger).orElse(null);
+                if (resetPassword == null) {
+                    userCarriveResponse.setMessage("registerCode not found");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
+                int code = generateRegisterCode();
+                resetPassword.setCode(code);
+                resetPassword.setUser(passenger);
+                resetPassword.setResetDate(LocalDateTime.now(zoneId).plusMinutes(10));
+                if (!resetPassword.getIsReset()){
+                    resetPassword.setIsReset(false);
+                    String emailContent = mailRegister(code);
+                    mailer.setContent(emailContent);
+                    try {
+                        mailService.sendMail(mailer);
+                        mailer.setIsGo(true);
+                        mailerRepository.save(mailer);
+                        resetPassword = resetPasswordRepository.save(resetPassword);
+                    } catch (Exception ex) {
+                        mailer.setIsGo(false);
+                        mailerRepository.save(mailer);
+                        logger.error(ex.getMessage());
+                        userCarriveResponse.setMessage("mail does not send");
+                        userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+                        userCarriveResponse.setData(null);
+                    }
+                }else {
+                    userCarriveResponse.setMessage("registration already exist");
+                    userCarriveResponse.setData(null);
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+                }
+                userCarriveResponse.setMessage("success");
+                userCarriveResponse.setData(resetPassword);
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_SUCCESS.getCode());
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.OK);
+            }else {
+                userCarriveResponse.setMessage("user type invalide");
+                userCarriveResponse.setCode(CodeResponseEnum.CODE_ERROR.getCode());
+                userCarriveResponse.setData(null);
+                return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
             }
 
         }catch (Exception e) {
@@ -803,5 +935,75 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
         } catch (BadCredentialsException e) {
             throw new Exception("INVALID_CREDENTIALS", e);
         }
+    }
+
+    private String mailResetPassword(Integer code){
+        return  "<!DOCTYPE html>" +
+                "<html lang=\"fr\">" +
+                "<head>" +
+                "    <meta charset=\"UTF-8\">" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                "    <title>REINITIALISATION DU MOT DE PASSE</title>" +
+                "    <style>" +
+                "        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }" +
+                "        .container { background-color: white; border-radius: 5px; padding: 20px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }" +
+                "        h1 { color: #333; }" +
+                "        p { font-size: 16px; line-height: 1.5; color: #555; }" +
+                "        .code { font-size: 24px; font-weight: bold; color: #007bff; background-color: #e9ecef; padding: 10px; border-radius: 5px; display: inline-block; margin-top: 10px; }" +
+                "        .footer { margin-top: 20px; font-size: 12px; color: #777; }" +
+                "    </style>" +
+                "</head>" +
+                "<body>" +
+                "    <div class=\"container\">" +
+                "        <h1>REINITIALISATION DU MOT DE PASSE</h1>" +
+                "        <p>Veuillez entrer ce code pour changer votre mot de passe :</p>" +
+                "        <div class=\"code\">" + code + "</div>" +
+                "        <p class=\"footer\">Ce code est valable pour 60 minutes.</p>" +
+                "    </div>" +
+                "</body>" +
+                "</html>";
+    }
+
+    private String mailRegister(Integer code){
+        return "<!DOCTYPE html>" +
+                "<html lang=\"fr\">" +
+                "<head>" +
+                "    <meta charset=\"UTF-8\">" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                "    <title>Validation de l'inscription</title>" +
+                "    <style>" +
+                "        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }" +
+                "        .container { background-color: white; border-radius: 5px; padding: 20px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }" +
+                "        h1 { color: #333; }" +
+                "        p { font-size: 16px; line-height: 1.5; color: #555; }" +
+                "        .code { font-size: 24px; font-weight: bold; color: #007bff; background-color: #e9ecef; padding: 10px; border-radius: 5px; display: inline-block; margin-top: 10px; }" +
+                "        .footer { margin-top: 20px; font-size: 12px; color: #777; }" +
+                "    </style>" +
+                "</head>" +
+                "<body>" +
+                "    <div class=\"container\">" +
+                "        <h1>Validation de votre inscription</h1>" +
+                "        <p>Veuillez entrer ce code pour valider votre inscription :</p>" +
+                "        <div class=\"code\">" + code + "</div>" +
+                "        <p class=\"footer\">Ce code est valable pour 10 minutes.</p>" +
+                "    </div>" +
+                "</body>" +
+                "</html>";
+    }
+
+    private Integer generateRegisterCode(){
+        int code;
+        do {
+            code = Integer.parseInt(RandomStringUtils.random(5, false, true));
+        } while (registerCodeRepository.existsByCode(code));
+        return code;
+    }
+
+    private Integer generateResetCode(){
+        int code;
+        do {
+            code = Integer.parseInt(RandomStringUtils.random(5, false, true));
+        } while (resetPasswordRepository.existsByCode(code));
+        return code;
     }
 }
