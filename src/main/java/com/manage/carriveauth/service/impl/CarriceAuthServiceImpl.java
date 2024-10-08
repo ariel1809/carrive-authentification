@@ -162,6 +162,12 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                     userCarriveResponse.setData(null);
                     return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
                 }
+                if (userRegister.getCarModel() == null){
+                    userCarriveResponse.setMessage("carModel is null");
+                    userCarriveResponse.setCode(CodeResponseEnum.CODE_NULL.getCode());
+                    userCarriveResponse.setData(null);
+                    return new ResponseEntity<>(userCarriveResponse, HttpStatus.BAD_REQUEST);
+                }
                 Driver driver = new Driver();
                 driver.setName(userRegister.getName());
                 driver.setEmail(userRegister.getEmail());
@@ -174,6 +180,7 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 car.setCarBrand(userRegister.getCarBrand());
                 car.setIdCar(userRegister.getIdCar());
                 car.setMatriculation(userRegister.getMatriculation());
+                car.setCarModel(userRegister.getCarModel());
                 driver = driverRepository.save(driver);
                 car.setDriver(driver);
                 carRepository.save(car);
