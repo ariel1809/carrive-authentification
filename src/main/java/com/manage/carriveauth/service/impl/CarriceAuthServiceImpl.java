@@ -181,9 +181,10 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 car.setIdCar(userRegister.getIdCar());
                 car.setMatriculation(userRegister.getMatriculation());
                 car.setCarModel(userRegister.getCarModel());
-                driver = driverRepository.save(driver);
                 car.setDriver(driver);
-                carRepository.save(car);
+                car = carRepository.save(car);
+                driver.getCars().add(car);
+                driver = driverRepository.save(driver);
 
                 registerCode.setUser(driver);
                 try {
