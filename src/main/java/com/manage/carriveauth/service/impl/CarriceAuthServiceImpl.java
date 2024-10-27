@@ -177,7 +177,6 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 driver.setIsConnected(false);
                 Car car = new Car();
                 car.setColor(userRegister.getColor());
-                car.setCarBrand(userRegister.getCarBrand());
                 car.setIdCar(userRegister.getIdCar());
                 car.setMatriculation(userRegister.getMatriculation());
                 car.setCarModel(userRegister.getCarModel());
