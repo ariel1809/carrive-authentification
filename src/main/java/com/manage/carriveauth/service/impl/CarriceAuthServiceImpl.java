@@ -997,11 +997,11 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
                 "</html>";
     }
 
-    private Integer generateRegisterCode(){
+    private Integer generateRegisterCode() {
         int code;
         do {
             code = Integer.parseInt(RandomStringUtils.random(5, false, true));
-        } while (registerCodeRepository.existsByCode(code));
+        } while (code < 10000 || code > 99999 || registerCodeRepository.existsByCode(code));
         return code;
     }
 
@@ -1009,7 +1009,7 @@ public class CarriceAuthServiceImpl implements CarriceAuthServiceApi {
         int code;
         do {
             code = Integer.parseInt(RandomStringUtils.random(5, false, true));
-        } while (resetPasswordRepository.existsByCode(code));
+        } while (code < 10000 || code > 99999 || resetPasswordRepository.existsByCode(code));
         return code;
     }
 }
